@@ -1,31 +1,28 @@
-#from mpi4py import MPI
+from mpi4py import MPI
 import os, os.path
 import numpy as np
 from osgeo import gdal
 from osgeo import gdal_array
 from osgeo import osr
-import matplotlib.pylab as plt
+#import matplotlib.pylab as plt
 
-import subprocess as sp
+#import subprocess as sp
 import sys
 
 
-ndviDir = "/home/vinay/Desktop/wbproj/ndvi"
+ndviDir = "/sciclone/data20/aiddata/REU/data/ltdr.nascom.nasa.gov/allData/Ver4/ndvi"
 
-#comm = MPI.COMM_WORLD
-#size = comm.Get_size()
-#rank = comm.Get_rank()
-size =1
-rank = 0
+comm = MPI.COMM_WORLD
+size = comm.Get_size()
+rank = comm.Get_rank()
 
-qlist = [name for name in os.listdir(ndviDir) if os.path.isdir(os.path.join(ndviDir, name)) ]
+accept = ['1981']
+
+qlist = [name for name in os.listdir(ndviDir) if os.path.isdir(os.path.join(ndviDir, name)) and name in accept]
 		
 c = rank
-# print c
-# print qlist
-# print size
+
 while c < len(qlist):
-	print c
 	yearDir = qlist[c]
 	flag = 0
 	geotransform = None
@@ -61,7 +58,7 @@ while c < len(qlist):
 		#print len(myarray[0])
 		#print len(ndvivalue[0])
 		if geotransform != None:
-			output_raster = gdal.GetDriverByName('GTiff').Create('/home/vinay/Desktop/wbproj/output_'+ yearDir+'.tif',ncols, nrows, 1 ,gdal.GDT_Float32)  
+			output_raster = gdal.GetDriverByName('GTiff').Create('/sciclone/home00/zjn/wbproj/ndvimpi/output/output_'+ yearDir+'.tif',ncols, nrows, 1 ,gdal.GDT_Float32)  
 			output_raster.SetGeoTransform(geotransform)  
 			srs = osr.SpatialReference()                 
 			srs.ImportFromEPSG(4326)  
@@ -70,9 +67,8 @@ while c < len(qlist):
 			output_raster.GetRasterBand(1).WriteArray(np.array(ndvivalue))
 			
 				
-	print c
-	print size
+	
  	c += size
 
 
-#comm.Barrier()
+comm.Barrier()
