@@ -12,9 +12,9 @@ def enum(*sequential, **named):
     enums = dict(zip(sequential, range(len(sequential))), **named)
     return type('Enum', (), enums)
 
-ndviDir = "/sciclone/home00/zjn/wbproj/ndvimpi/ndvi"
+#ndviDir = "/sciclone/home00/zjn/wbproj/ndvimpi/ndvi"
 
-#ndviDir = "/sciclone/data20/aiddata/REU/data/ltdr.nascom.nasa.gov/allData/Ver4/ndvi"
+ndviDir = "/sciclone/data20/aiddata/REU/data/ltdr.nascom.nasa.gov/allData/Ver4/ndvi"
 comm = MPI.COMM_WORLD
 size = comm.Get_size()
 rank = comm.Get_rank()
@@ -23,15 +23,15 @@ tags = enum('READY', 'DONE', 'EXIT', 'START')
 
 
 
-accept = ['1981']
+#accept = []
 
-qlist = [name for name in os.listdir(ndviDir) if os.path.isdir(os.path.join(ndviDir, name)) and name in accept]
+qlist = [name for name in os.listdir(ndviDir) if os.path.isdir(os.path.join(ndviDir, name))]
 		
 
 for i in range(len(qlist)): 
 	yearDir = qlist[i]
 	filelist = [ndviDir + "/" + yearDir + "/" + name for name in os.listdir(ndviDir + "/" + yearDir) if not os.path.isdir(os.path.join(ndviDir+"/" + yearDir ,name)) ]
-	
+	print yearDir
  	if rank ==0:
  		geotransform = None
  		tmp = gdal.Open(filelist[1])
@@ -44,6 +44,7 @@ for i in range(len(qlist)):
  		task_index = 0
  		num_workers = size - 1
  		closed_workers = 0
+ 		print("Master starting with %d workers" % num_workers)
  		while closed_workers < num_workers:
  			data = comm.recv(source=MPI.ANY_SOURCE, tag=MPI.ANY_TAG, status=status)
  			source = status.Get_source()
@@ -51,6 +52,7 @@ for i in range(len(qlist)):
  			if tag == tags.READY:
  				if task_index < len(tasks):
  					comm.send(tasks[task_index], dest=source, tag=tags.START)
+ 					print("Sending task %d to worker %d" % (task_index, source))
 					task_index += 1
 
 				else:
@@ -58,7 +60,10 @@ for i in range(len(qlist)):
 
 			elif tag == tags.DONE:
 				result.append(data)
+				print("Got data from worker %d" % source)
+
 			elif tag == tags.EXIT:
+				print("Worker %d exited." % source)
 				closed_workers +=1
 
 		ndviarr= np.dstack(result)
@@ -68,10 +73,9 @@ for i in range(len(qlist)):
 			for cell in range(0,len(ndviarr[row])):
 				ndvivalue[row].append(np.max(ndviarr[row][cell]))
 
-		#print len(myarray[0])
-		#print len(ndvivalue[0])
+		
 		if geotransform != None:
-			output_raster = gdal.GetDriverByName('GTiff').Create('/sciclone/home00/zjn/wbproj/ndvimpi/ndvi/output_'+ yearDir+'.tif',ncols, nrows, 1 ,gdal.GDT_Float32)  
+			output_raster = gdal.GetDriverByName('GTiff').Create('/sciclone/home00/zjn/wbproj/ndvimpi/output/ndvi_max/'+ yearDir+'.tif',ncols, nrows, 1 ,gdal.GDT_Float32)  
 			output_raster.SetGeoTransform(geotransform)  
 			srs = osr.SpatialReference()                 
 			srs.ImportFromEPSG(4326)  
@@ -80,6 +84,8 @@ for i in range(len(qlist)):
 			output_raster.GetRasterBand(1).WriteArray(np.array(ndvivalue))
 
 	else:
+		name = MPI.Get_processor_name()
+		print("I am a worker with rank %d on %s." % (rank, name))
 		while True:
 			comm.send(None,dest=0,tag=tags.READY)
 			task = comm.recv(source=0, tag=MPI.ANY_TAG, status=status)
@@ -91,9 +97,10 @@ for i in range(len(qlist)):
 				comm.send(myarray, dest=0, tag=tags.DONE)
 
 			if tag == tags.EXIT:
+				comm.send(None, dest=0, tag=tags.EXIT)
 				break
 
-		comm.send(None, dest=0, tag=tags.EXIT)
+		#comm.send(None, dest=0, tag=tags.EXIT)
 
 			# if (flag == 0):
 			# 	#DS = gdal.Open(subroot+"/"+file)
