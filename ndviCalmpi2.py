@@ -14,7 +14,11 @@ def enum(*sequential, **named):
 
 #ndviDir = "/sciclone/home00/zjn/wbproj/ndvimpi/ndvi"
 
+<<<<<<< HEAD
 ndviDir = "/sciclone/aiddata10/REU/data/ltdr.nascom.nasa.gov/allData/Ver4/ndvi"
+=======
+ndviDir = "/sciclone/data20/aiddata/REU/data/ltdr.nascom.nasa.gov/allData/Ver4/ndvi"
+>>>>>>> origin/master
 comm = MPI.COMM_WORLD
 size = comm.Get_size()
 rank = comm.Get_rank()
@@ -22,11 +26,18 @@ status = MPI.Status()
 tags = enum('READY', 'DONE', 'EXIT', 'START')
 
 
+<<<<<<< HEAD
 ignore = ['1981']
 
 #accept = ['1981']
 
 qlist = [name for name in os.listdir(ndviDir) if os.path.isdir(os.path.join(ndviDir, name)) and not name in ignore]
+=======
+
+#accept = []
+
+qlist = [name for name in os.listdir(ndviDir) if os.path.isdir(os.path.join(ndviDir, name))]
+>>>>>>> origin/master
 		
 
 for i in range(len(qlist)): 
