@@ -1,3 +1,4 @@
+
 from mpi4py import MPI
 import os, os.path
 import numpy as np
@@ -8,17 +9,16 @@ from osgeo import osr
 
 #import subprocess as sp
 #import sys
+
+
 def enum(*sequential, **named):
     enums = dict(zip(sequential, range(len(sequential))), **named)
     return type('Enum', (), enums)
 
-#ndviDir = "/sciclone/home00/zjn/wbproj/ndvimpi/ndvi"
-
-<<<<<<< HEAD
+# ndviDir = "/sciclone/home00/zjn/wbproj/ndvimpi/ndvi"
+# ndviDir = "/sciclone/data20/aiddata/REU/data/ltdr.nascom.nasa.gov/allData/Ver4/ndvi"
 ndviDir = "/sciclone/aiddata10/REU/data/ltdr.nascom.nasa.gov/allData/Ver4/ndvi"
-=======
-ndviDir = "/sciclone/data20/aiddata/REU/data/ltdr.nascom.nasa.gov/allData/Ver4/ndvi"
->>>>>>> origin/master
+
 comm = MPI.COMM_WORLD
 size = comm.Get_size()
 rank = comm.Get_rank()
@@ -26,18 +26,11 @@ status = MPI.Status()
 tags = enum('READY', 'DONE', 'EXIT', 'START')
 
 
-<<<<<<< HEAD
 ignore = ['1981']
+# qlist = [name for name in os.listdir(ndviDir) if os.path.isdir(os.path.join(ndviDir, name)) and not name in ignore]
 
-#accept = ['1981']
-
-qlist = [name for name in os.listdir(ndviDir) if os.path.isdir(os.path.join(ndviDir, name)) and not name in ignore]
-=======
-
-#accept = []
-
-qlist = [name for name in os.listdir(ndviDir) if os.path.isdir(os.path.join(ndviDir, name))]
->>>>>>> origin/master
+accept = ['1981']
+qlist = [name for name in os.listdir(ndviDir) if os.path.isdir(os.path.join(ndviDir, name)) and name in accept]
 		
 
 for i in range(len(qlist)): 
@@ -78,12 +71,17 @@ for i in range(len(qlist)):
 				print("Worker %d exited." % source)
 				closed_workers +=1
 
-		ndviarr= np.dstack(result)
-		ndvivalue = []
-		for row in range(0,len(ndviarr)):
-			ndvivalue.append([])
-			for cell in range(0,len(ndviarr[row])):
-				ndvivalue[row].append(np.max(ndviarr[row][cell]))
+
+        result = np.array(result)
+
+		# ndviarr= np.dstack(result)
+		# ndvivalue = []
+		# for row in range(0,len(ndviarr)):
+		# 	ndvivalue.append([])
+		# 	for cell in range(0,len(ndviarr[row])):
+		# 		ndvivalue[row].append(np.max(ndviarr[row][cell]))
+
+        ndvivalue = np.var(result, axis=0)
 
 		
 		if geotransform != None:
