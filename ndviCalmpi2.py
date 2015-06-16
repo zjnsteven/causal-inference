@@ -108,8 +108,10 @@ for i in range(len(qlist)):
             ndvivalue = np.mean(result, axis=0)
 
         elif method == "var":
-            ndvivalue = np.nanvar(result, axis=0)
+            ndvivalue = np.var(result, axis=0)
 
+        if np.nan in np.ravel(ndvi_value):
+            print sys.exit("NOT A NUMBER IS PRESENT IN NDVIVALUE ARRAY")
 
         if geotransform != None:
             output_raster = gdal.GetDriverByName('GTiff').Create('/sciclone/home00/zjn/wbproj/ndvimpi/output/ndvi_'+method+'/'+ yearDir+'.tif',ncols, nrows, 1 ,gdal.GDT_Float32)  
@@ -118,7 +120,7 @@ for i in range(len(qlist)):
             srs.ImportFromEPSG(4326)  
             output_raster.SetProjection(srs.ExportToWkt()) 
             output_raster.GetRasterBand(1).SetNoDataValue(-9999)
-            output_raster.GetRasterBand(1).WriteArray(np.array(ndvivalue))
+            output_raster.GetRasterBand(1).WriteArray(ndvivalue)
 
     else:
         name = MPI.Get_processor_name()
