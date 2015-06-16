@@ -1,6 +1,7 @@
 
 from mpi4py import MPI
 import os, os.path
+import sys
 import numpy as np
 from osgeo import gdal
 from osgeo import gdal_array
@@ -11,19 +12,35 @@ from osgeo import osr
 #import sys
 
 
-def enum(*sequential, **named):
-    enums = dict(zip(sequential, range(len(sequential))), **named)
-    return type('Enum', (), enums)
+comm = MPI.COMM_WORLD
+size = comm.Get_size()
+rank = comm.Get_rank()
+status = MPI.Status()
+
+
+# --------------------
 
 # ndviDir = "/sciclone/home00/zjn/wbproj/ndvimpi/ndvi"
 # ndviDir = "/sciclone/data20/aiddata/REU/data/ltdr.nascom.nasa.gov/allData/Ver4/ndvi"
 ndviDir = "/sciclone/aiddata10/REU/data/ltdr.nascom.nasa.gov/allData/Ver4/ndvi"
 
-comm = MPI.COMM_WORLD
-size = comm.Get_size()
-rank = comm.Get_rank()
-status = MPI.Status()
+
+method = "var"
+
+# --------------------
+
+
+def enum(*sequential, **named):
+    enums = dict(zip(sequential, range(len(sequential))), **named)
+    return type('Enum', (), enums)
+
+
 tags = enum('READY', 'DONE', 'EXIT', 'START')
+
+method_list = ["max", "mean", "var"]
+
+if method not in method_list:
+    sys.exit("Bad method given")
 
 
 ignore = ['1981']
@@ -37,6 +54,7 @@ for i in range(len(qlist)):
     yearDir = qlist[i]
     filelist = [ndviDir + "/" + yearDir + "/" + name for name in os.listdir(ndviDir + "/" + yearDir) if not os.path.isdir(os.path.join(ndviDir+"/" + yearDir ,name)) ]
     print yearDir
+
     if rank ==0:
         geotransform = None
         tmp = gdal.Open(filelist[1])
@@ -50,6 +68,7 @@ for i in range(len(qlist)):
         num_workers = size - 1
         closed_workers = 0
         print("Master starting with %d workers" % num_workers)
+
         while closed_workers < num_workers:
             data = comm.recv(source=MPI.ANY_SOURCE, tag=MPI.ANY_TAG, status=status)
             source = status.Get_source()
@@ -72,8 +91,6 @@ for i in range(len(qlist)):
                 closed_workers +=1
 
 
-        result = np.array(result)
-
         # ndviarr= np.dstack(result)
         # ndvivalue = []
         # for row in range(0,len(ndviarr)):
@@ -81,11 +98,21 @@ for i in range(len(qlist)):
         #   for cell in range(0,len(ndviarr[row])):
         #       ndvivalue[row].append(np.max(ndviarr[row][cell]))
 
-        ndvivalue = np.var(result, axis=0)
 
-        
+        result = np.array(result)
+
+        if method == "max":
+            ndvivalue = np.max(result, axis=0)
+
+        elif method == "mean":
+            ndvivalue = np.mean(result, axis=0)
+
+        elif method == "var":
+            ndvivalue = np.nanvar(result, axis=0)
+
+
         if geotransform != None:
-            output_raster = gdal.GetDriverByName('GTiff').Create('/sciclone/home00/zjn/wbproj/ndvimpi/output/ndvi_max/'+ yearDir+'.tif',ncols, nrows, 1 ,gdal.GDT_Float32)  
+            output_raster = gdal.GetDriverByName('GTiff').Create('/sciclone/home00/zjn/wbproj/ndvimpi/output/ndvi_'+method+'/'+ yearDir+'.tif',ncols, nrows, 1 ,gdal.GDT_Float32)  
             output_raster.SetGeoTransform(geotransform)  
             srs = osr.SpatialReference()                 
             srs.ImportFromEPSG(4326)  
@@ -96,6 +123,7 @@ for i in range(len(qlist)):
     else:
         name = MPI.Get_processor_name()
         print("I am a worker with rank %d on %s." % (rank, name))
+
         while True:
             comm.send(None,dest=0,tag=tags.READY)
             task = comm.recv(source=0, tag=MPI.ANY_TAG, status=status)
@@ -109,6 +137,7 @@ for i in range(len(qlist)):
             if tag == tags.EXIT:
                 comm.send(None, dest=0, tag=tags.EXIT)
                 break
+
 
         #comm.send(None, dest=0, tag=tags.EXIT)
 
