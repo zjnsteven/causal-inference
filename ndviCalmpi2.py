@@ -111,7 +111,7 @@ for i in range(len(qlist)):
             ndvivalue = np.var(result, axis=0)
 
         if np.nan in np.ravel(ndvi_value):
-            print sys.exit("NOT A NUMBER IS PRESENT IN NDVIVALUE ARRAY")
+            sys.exit("NOT A NUMBER IS PRESENT IN NDVIVALUE ARRAY")
 
         if geotransform != None:
             output_raster = gdal.GetDriverByName('GTiff').Create('/sciclone/home00/zjn/wbproj/ndvimpi/output/ndvi_'+method+'/'+ yearDir+'.tif',ncols, nrows, 1 ,gdal.GDT_Float32)  
