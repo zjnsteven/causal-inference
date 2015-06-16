@@ -98,20 +98,24 @@ for i in range(len(qlist)):
         #   for cell in range(0,len(ndviarr[row])):
         #       ndvivalue[row].append(np.max(ndviarr[row][cell]))
 
+        nodata = -9999
 
         result = np.array(result)
+        masked_result = np.ma.MaskedArray(result, np.in1d(result, [nodata]), fill_value=nodata)
 
         if method == "max":
             ndvivalue = np.max(result, axis=0)
 
         elif method == "mean":
-            ndvivalue = np.mean(result, axis=0)
+            ndvivalue = np.ma.mean(masked_result, axis=0).filled(nodata)
 
         elif method == "var":
-            ndvivalue = np.var(result, axis=0)
+            ndvivalue = np.ma.var(masked_result, axis=0).filled(nodata)
 
-        if np.nan in np.ravel(ndvivalue):
-            sys.exit("NOT A NUMBER IS PRESENT IN NDVIVALUE ARRAY")
+
+        # if np.nan in np.ravel(ndvivalue):
+        #     sys.exit("NOT A NUMBER IS PRESENT IN NDVIVALUE ARRAY")
+
 
         if geotransform != None:
             output_raster = gdal.GetDriverByName('GTiff').Create('/sciclone/home00/zjn/wbproj/ndvimpi/output/ndvi_'+method+'/'+ yearDir+'.tif',ncols, nrows, 1 ,gdal.GDT_Float32)  
@@ -119,7 +123,7 @@ for i in range(len(qlist)):
             srs = osr.SpatialReference()                 
             srs.ImportFromEPSG(4326)  
             output_raster.SetProjection(srs.ExportToWkt()) 
-            output_raster.GetRasterBand(1).SetNoDataValue(-9999)
+            output_raster.GetRasterBand(1).SetNoDataValue(nodata)
             output_raster.GetRasterBand(1).WriteArray(ndvivalue)
 
     else:
