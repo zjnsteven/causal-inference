@@ -110,7 +110,7 @@ for i in range(len(qlist)):
             result = np.array(result, dtype=np.float32)
             result[result == -9999] = np.nan
             ndvivalue = np.nanmean(result, axis=0)
-            ndvivalue = ndvivalue[np.isnan(ndvivalue)] = float(nodata)
+            ndvivalue[np.isnan(ndvivalue)] = float(nodata)
             # ndvivalue = np.ma.mean(masked_result, axis=0).filled(nodata)
 
         elif method == "var":
@@ -118,7 +118,7 @@ for i in range(len(qlist)):
             result = np.array(result, dtype=np.float32)
             result[result == -9999] = np.nan
             ndvivalue = np.nanvar(result, axis=0)
-            ndvivalue = ndvivalue[np.isnan(ndvivalue)] = float(nodata)
+            ndvivalue[np.isnan(ndvivalue)] = float(nodata)
 
 
         # ndvivalue = ndvivalue[np.isnan(ndvivalue)] = nodata
