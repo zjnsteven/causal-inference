@@ -101,17 +101,25 @@ for i in range(len(qlist)):
         nodata = -9999
 
         result = np.array(result)
-        masked_result = np.ma.MaskedArray(result, np.in1d(result, [nodata]), fill_value=nodata)
+        # masked_result = np.ma.MaskedArray(result, np.in1d(result, [nodata]), fill_value=nodata)
 
         if method == "max":
             ndvivalue = np.max(result, axis=0)
 
         elif method == "mean":
-            ndvivalue = np.ma.mean(masked_result, axis=0).filled(nodata)
+            result = np.array(result, dtype=np.float32)
+            ndvivalue = np.nanmean(result, axis=0)
+            ndvivalue = ndvivalue[np.isnan(ndvivalue)] = nodata
+            # ndvivalue = np.ma.mean(masked_result, axis=0).filled(nodata)
 
         elif method == "var":
-            ndvivalue = np.ma.var(masked_result, axis=0).filled(nodata)
+            # ndvivalue = np.ma.var(masked_result, axis=0).filled(nodata)
+            result = np.array(result, dtype=np.float32)
+            ndvivalue = np.nanvar(result, axis=0)
+            ndvivalue = ndvivalue[np.isnan(ndvivalue)] = nodata
 
+
+        # ndvivalue = ndvivalue[np.isnan(ndvivalue)] = nodata
 
         # if np.nan in np.ravel(ndvivalue):
         #     sys.exit("NOT A NUMBER IS PRESENT IN NDVIVALUE ARRAY")
