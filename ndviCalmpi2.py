@@ -110,7 +110,7 @@ for i in range(len(qlist)):
         elif method == "var":
             ndvivalue = np.var(result, axis=0)
 
-        if np.nan in np.ravel(ndvi_value):
+        if np.nan in np.ravel(ndvivalue):
             sys.exit("NOT A NUMBER IS PRESENT IN NDVIVALUE ARRAY")
 
         if geotransform != None:
