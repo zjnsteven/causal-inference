@@ -25,7 +25,7 @@ status = MPI.Status()
 ndviDir = "/sciclone/aiddata10/REU/data/ltdr.nascom.nasa.gov/allData/Ver4/ndvi"
 
 
-method = "var"
+method = "mean"
 
 # --------------------
 
